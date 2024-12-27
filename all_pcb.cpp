@@ -1,16 +1,12 @@
-#ifndef PCB_H
-#define PCB_H
+#ifndef all_pcb_h
+#define all_pcb_h
 
 #include "allhead.h"
-#include <memory>
-#include <vector>
-#include <unordered_map>
-#include <iostream>
 
-struct Context
+typedef struct Context
 {
-    std::unordered_map<std::string, int> registers; // 模拟寄存器
-};
+    std::unordered_map<std::string, int> registers; //
+} Context;
 
 struct StackFrame
 {
@@ -52,7 +48,6 @@ private:
 class PCB
 {
 public:
-    // 枚举类型 State 在公共部分声明
     enum State
     {
         READY,
@@ -61,7 +56,7 @@ public:
         TERMINATED
     };
 
-    PCB(long long int _pid = 0, int _priority = 0, int _arrivalTime = 0, int _totalRunTime = 0, State _currentState = READY, std::shared_ptr<PCB> _parent = nullptr, int _memoryUsage = 0)
+    PCB(int _pid = 0, int _priority = 0, int _arrivalTime = 0, int _totalRunTime = 0, State _currentState = BLOCKED)
         : pid(_pid),
           priority(_priority),
           arrivalTime(_arrivalTime),
@@ -75,8 +70,7 @@ public:
         numOfpro = proNum++;
     }
 
-    // Getters 和 Setters
-    long long int getPid() const { return pid; }
+    int getPid() const { return pid; }
     int getPriority() const { return priority; }
     void setPriority(int p) { priority = p; }
     State getCurrentState() const { return currentState; }
@@ -98,12 +92,12 @@ public:
     int getCodeStartIndex() const { return codeStartIndex; }
     int getCodeLength() const { return codeLength; }
 
-    int getArrivalTime() const { return arrivalTime; } // 获取 arrivalTime 的 Getter
+    int getArrivalTime() const { return arrivalTime; }
 
     // 重载小于运算符用于优先级比较
     bool operator<(const PCB &other) const
     {
-        return this->priority < other.priority; // 优先级值越高，优先级越高
+        return !(this->priority < other.priority);
     }
 
     // 保存当前进程上下文到PCB中的Context结构体
@@ -132,15 +126,14 @@ public:
             :
             : "m"(context.registers["eax"]), "m"(context.registers["ebx"]), "m"(context.registers["ecx"]), "m"(context.registers["edx"])
             : "eax", "ebx", "ecx", "edx");
-    }   void setCurrentState(State newState) { currentState = newState; }
+    }
+    void setCurrentState(State newState) { currentState = newState; }
     int getTotalRunTime() const { return totalRunTime; }
- 
 
     int numOfpro;
 
     // 公共成员
     State currentState;
-
     Context context;
     int codeStartIndex;
     int codeLength;
@@ -149,11 +142,10 @@ public:
 
     Stack stack;
 
-    // 程序计数器
     int programCounter;
 
 private:
-    long long int pid;
+    int pid;
     int priority;
     int arrivalTime;
     int totalRunTime;
@@ -161,7 +153,11 @@ private:
     static int proNum;
 };
 
-// 初始化静态成员
 int PCB::proNum = 0;
 
 #endif
+
+int main()
+{
+    return 0;
+}

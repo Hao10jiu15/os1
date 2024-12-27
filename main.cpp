@@ -1,23 +1,22 @@
 // main.cpp
-#include "pcb.h"
-#include "cpu.h"
-#include "allhead.h" // 确保包含 allhead.h
-#include <thread>
-#include <atomic>
-#include <iostream>
+#include "all_cpu.h"
+#include "allhead.h"
+#include "all_pcb.h"
 
-// 定义全局 code 向量
 std::vector<std::string> code;
 
 int main()
 {
-    int numProcesses = 3; // 三个进程
-
-    CPU cpu(3); // Round Robin 的时间片为 3
+    // 设置信号处理
+    signal(SIGINT, signalHandler);
+    // 创建计时线程
+    pthread_t timer;
+    pthread_create(&timer, nullptr, countTime, nullptr);
+    // 模拟程序运行，等待一段时间后停止计时线程
+    // std::this_thread::sleep_for(std::chrono::seconds(10));
 
     std::vector<PCB *> processes;
 
-    // 定义每个进程的指令集（将原始代码改成类似指令集的格式）
     std::vector<std::string> instructions_p1 = {
         "#include <iostream>",
         "int main() {",
@@ -64,7 +63,6 @@ int main()
         "    return 0;",
         "} "};
 
-    // 创建进程控制块（PCB）实例
     PCB *pcb1 = new PCB(1, 30, 0, instructions_p1.size() + 4); // Process 1
     PCB *pcb2 = new PCB(2, 20, 2, instructions_p2.size() + 2); // Process 2
     PCB *pcb3 = new PCB(3, 40, 4, instructions_p3.size() + 1); // Process 3
@@ -77,10 +75,8 @@ int main()
     processes.push_back(pcb4);
     processes.push_back(pcb5);
 
-    // 初始化全局 code 向量以容纳所有指令
-    code.resize(ALL_MEMORY_SIZE, ""); // 初始化为空字符串
+    code.resize(ALL_MEMORY_SIZE, "");
 
-    // Function to load instructions into code array
     auto loadInstructions = [&](const std::vector<std::string> &instructions, PCB *pcb)
     {
         int offset = pcb->numOfpro * 256; // 假设每个进程最多256条指令
@@ -98,43 +94,18 @@ int main()
     loadInstructions(instructions_p3, pcb4);
     loadInstructions(instructions_p3, pcb5);
 
-    // 将进程添加到 CPU
+    std::sort(processes.begin(), processes.end(), [](PCB *a, PCB *b)
+              { return !(*a < *b); });
+
     for (auto &pcb : processes)
     {
-        cpu.addProcess(pcb);
+        std::cout << "Process " << pcb->getPid() << " Priority: " << pcb->getPriority() << std::endl;
     }
 
-    // 选择调度算法
-    int selectedScheduleAlgorithm = 0; // 0: Round Robin, 1: FCFS, 2: Highest Priority First
-
-    std::cout << "Starting CPU scheduling, using algorithm: ";
-    switch (selectedScheduleAlgorithm)
-    {
-    case 0:
-        std::cout << "Round Robin" << std::endl;
-        break;
-    case 1:
-        std::cout << "First Come First Serve (FCFS)" << std::endl;
-        break;
-    case 2:
-        std::cout << "Highest Priority First" << std::endl;
-        break;
-    default:
-        std::cout << "Unknown" << std::endl;
-        break;
-    }
-
-    // 启动 CPU 调度
-    cpu.manageTimeAndSchedule(selectedScheduleAlgorithm);
-
-    // 显示最终队列状态
-    cpu.displayQueues();
-
-    // 清理内存
-    for (auto &pcb : processes)
-    {
-        delete pcb;
-    }
-
+    // 停止计时线程
+    stopTimer = true;
+    // 等待计时线程结束
+    pthread_join(timer, nullptr);
+    std::cout << "Main thread ends." << "CPU Time:" << CPU::currentTime << std::endl;
     return 0;
 }
