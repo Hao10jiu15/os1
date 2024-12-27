@@ -1,0 +1,9 @@
+{
+    "files.associations": {
+        "*.jsp": "jsp",
+        "*.java": "java",
+        "*.css": "css",
+        "ostream": "cpp",
+        "chrono": "cpp"
+    }
+}
